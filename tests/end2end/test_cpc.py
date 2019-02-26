@@ -18,6 +18,7 @@ End2end tests for CPCs that do not change anything.
 
 from __future__ import absolute_import, print_function
 
+import pytest
 import requests.packages.urllib3
 import zhmcclient
 from zhmcclient.testutils.hmc_definition_fixtures import hmc_definition, hmc_session  # noqa: F401, E501
@@ -60,6 +61,54 @@ def assert_cpc_minimal(cpc, exp_name, exp_prop_names):
         "CPC {0}".format(exp_name)
     assert cpc.name == exp_name, \
         "CPC {0}".format(exp_name)
+
+@pytest.mark.skip("test_print_cpcs: Printing is disabled by default")
+def test_print_cpcs(hmc_session):  # noqa: F811
+    """
+    Print the CPCs in the HMC definition.
+    """
+    client = zhmcclient.Client(hmc_session)
+    hd = hmc_session.hmc_definition
+
+    print("")
+    print("CPCs for HMC {}".format(hd.nickname))
+
+    for def_name in hd.cpcs:
+        found_cpcs = client.cpcs.list(filter_args=dict(name=def_name),
+                                      full_properties=True)
+        assert len(found_cpcs) == 1
+        found_cpc = found_cpcs[0]
+
+        print("CPC {}:".format(def_name))
+        print(repr(found_cpc))
+
+        if found_cpc.dpm_enabled:
+
+            for partition in found_cpc.partitions.list():
+                print("Partition {}:".format(partition.name))
+                print(repr(partition))
+
+            for adapter in found_cpc.adapters.list():
+                print("Adapter {}:".format(adapter.name))
+                print(repr(adapter))
+
+        else:
+
+            for lpar in found_cpc.lpars.list():
+                print("LPAR {}:".format(lpar.name))
+                print(repr(lpar))
+
+            for reset_profile in found_cpc.reset_activation_profiles.list():
+                print("Reset profile {}:".format(reset_profile.name))
+                print(repr(reset_profile))
+
+            for load_profile in found_cpc.load_activation_profiles.list():
+                print("Reset profile {}:".format(load_profile.name))
+                print(repr(load_profile))
+
+            for image_profile in found_cpc.image_activation_profiles.list():
+                print("Reset profile {}:".format(image_profile.name))
+                print(repr(image_profile))
 
 
 def test_cpc_find_by_name(hmc_session):  # noqa: F811
